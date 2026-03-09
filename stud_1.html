@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Student Database</title>
+
+<style>
+
+body{
+font-family:Segoe UI,Arial;
+background:#eef2f7;
+margin:0;
+}
+
+/* Header */
+
+.header{
+background:linear-gradient(90deg,#2c3e50,#4ca1af);
+color:white;
+padding:18px;
+text-align:center;
+font-size:24px;
+letter-spacing:1px;
+font-weight:bold;
+}
+
+/* Container */
+
+.container{
+width:90%;
+margin:auto;
+margin-top:30px;
+}
+
+/* Search Area */
+
+.searchArea{
+display:flex;
+gap:10px;
+}
+
+.searchBox{
+flex:1;
+padding:12px;
+font-size:16px;
+border:1px solid #ccc;
+border-radius:6px;
+outline:none;
+}
+
+.searchBox:focus{
+border-color:#4ca1af;
+}
+
+/* Search Button */
+
+.searchBtn{
+padding:12px 20px;
+border:none;
+background:#4ca1af;
+color:white;
+font-size:15px;
+border-radius:6px;
+cursor:pointer;
+transition:0.2s;
+}
+
+.searchBtn:hover{
+background:#2c3e50;
+}
+
+/* Table */
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+background:white;
+box-shadow:0 3px 10px rgba(0,0,0,0.08);
+}
+
+th{
+background:#2c3e50;
+color:white;
+padding:10px;
+font-size:14px;
+}
+
+td{
+padding:9px;
+border-bottom:1px solid #eee;
+font-size:14px;
+}
+
+tr:hover{
+background:#f6f9fc;
+}
+
+/* Loading Overlay */
+
+#loading{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.5);
+display:none;
+align-items:center;
+justify-content:center;
+z-index:1000;
+}
+
+.loader{
+width:50px;
+height:50px;
+border:5px solid #eee;
+border-top:5px solid #4ca1af;
+border-radius:50%;
+animation:spin 1s linear infinite;
+}
+
+@keyframes spin{
+0%{transform:rotate(0deg)}
+100%{transform:rotate(360deg)}
+}
+
+.noResult{
+text-align:center;
+padding:20px;
+font-size:16px;
+color:#888;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+Student Search System
+</div>
+
+<div class="container">
+
+<div class="searchArea">
+
+<input
+type="text"
+id="search"
+class="searchBox"
+placeholder="Type student name (min 3 letters)..."
+>
+
+<button class="searchBtn" onclick="manualSearch()">Search</button>
+
+</div>
+
+<table>
+
+<thead>
+<tr id="headerRow"></tr>
+</thead>
+
+<tbody id="tableBody"></tbody>
+
+</table>
+
+</div>
+
+<div id="loading">
+<div class="loader"></div>
+</div>
+
+<script src="config.js"></script>
+
+<script>
+
+let searchInput=document.getElementById("search");
+let typingTimer;
+
+/* columns you DON'T want to show */
+
+const hiddenColumns=[
+"OCCUPATION",
+"ORGANIZATION",
+"DATE OF BIRTH",
+"CATEGORY",
+"QUALIFICATION1",
+"QUALIFICATION2",
+"PROF. QUALIFICATION1",
+"Prof Qualification2"
+];
+
+/* live search with delay (faster + fewer API calls) */
+
+searchInput.addEventListener("keyup",function(e){
+
+clearTimeout(typingTimer);
+
+if(e.key==="Enter"){
+manualSearch();
+return;
+}
+
+let text=this.value;
+
+typingTimer=setTimeout(function(){
+
+if(text.length>=3){
+searchStudent(text);
+}
+
+},300); // 300ms debounce
+
+});
+
+function manualSearch(){
+
+let text=searchInput.value;
+
+if(text.length>=3){
+searchStudent(text);
+}
+
+}
+
+function searchStudent(name){
+
+document.getElementById("loading").style.display="flex";
+
+fetch(SCRIPT_URL+"?name="+name)
+
+.then(res=>res.json())
+
+.then(data=>{
+
+document.getElementById("loading").style.display="none";
+
+if(data.length==0){
+
+document.getElementById("tableBody").innerHTML=
+"<tr><td class='noResult'>No Student Found</td></tr>";
+
+document.getElementById("headerRow").innerHTML="";
+
+return;
+
+}
+
+createTable(data);
+
+})
+
+}
+
+function createTable(data){
+
+let headers=Object.keys(data[0]);
+
+headers=headers.filter(h=>!hiddenColumns.includes(h));
+
+let headerHTML="";
+
+headers.forEach(h=>{
+headerHTML+="<th>"+h+"</th>";
+});
+
+document.getElementById("headerRow").innerHTML=headerHTML;
+
+let bodyHTML="";
+
+data.forEach(row=>{
+
+bodyHTML+="<tr>";
+
+headers.forEach(h=>{
+bodyHTML+="<td>"+row[h]+"</td>";
+});
+
+bodyHTML+="</tr>";
+
+});
+
+document.getElementById("tableBody").innerHTML=bodyHTML;
+
+}
+
+</script>
+
+</body>
+
+</html>
